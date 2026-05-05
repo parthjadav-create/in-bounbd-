@@ -1,112 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Restaurant Lead Dashboard</title>
+  <title>Live Performance Dashboard</title>
 
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI';
-      background: linear-gradient(135deg, #0f172a, #1e293b);
-      color: white;
+      background: #eef2f7;
     }
 
-    h1 {
-      text-align: center;
-      padding: 20px;
+    /* HEADER */
+    .header {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 20px;
+      margin: 15px;
     }
 
-    .container {
-      padding: 20px;
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
     }
 
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.05);
+    /* FILTER BAR */
+    .filters {
+      background: white;
+      margin: 15px;
       padding: 15px;
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .filters input {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .btn {
+      background: #2563eb;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* LAYOUT */
+    .main {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 15px;
+      padding: 15px;
+    }
+
+    /* LEFT CARDS */
+    .card {
+      color: white;
+      padding: 20px;
+      border-radius: 20px;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    .blue { background: #3b82f6; }
+    .green { background: #22c55e; }
+    .pink { background: #ec4899; }
+    .orange { background: #f97316; }
+    .teal { background: #14b8a6; }
+
+    .card h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    /* TABLE SECTION */
+    .table-box {
+      background: white;
+      border-radius: 20px;
+      padding: 15px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: rgba(255,255,255,0.05);
+      font-size: 13px;
     }
 
     th, td {
-      padding: 8px;
-      font-size: 12px;
+      padding: 10px;
+      text-align: left;
     }
 
     th {
-      background: #2563eb;
+      background: #1e293b;
+      color: white;
     }
 
-    input {
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin-bottom: 10px;
-      width: 300px;
+    tr:nth-child(even) {
+      background: #f3f4f6;
     }
+
   </style>
 </head>
 
 <body>
 
-<h1>📊 Restaurant Lead Dashboard</h1>
+<!-- HEADER -->
+<div class="header">
+  <h1>📊 Live Performance Dashboard</h1>
+  <button class="btn" onclick="loadData()">Refresh Now</button>
+</div>
 
-<div class="container">
+<!-- FILTERS -->
+<div class="filters">
+  From: <input type="date" id="fromDate">
+  To: <input type="date" id="toDate">
+</div>
 
-  <div class="cards">
-    <div class="card">
-      <h3>Total Leads</h3>
-      <p id="total"></p>
-    </div>
+<!-- MAIN -->
+<div class="main">
 
-    <div class="card">
-      <h3>Single Outlet</h3>
-      <p id="single"></p>
-    </div>
-
-    <div class="card">
-      <h3>Chain Outlets</h3>
-      <p id="chain"></p>
-    </div>
-
-    <div class="card">
-      <h3>States Covered</h3>
-      <p id="states"></p>
-    </div>
+  <!-- LEFT SIDE CARDS -->
+  <div>
+    <div class="card blue">TOTAL<br><h2 id="total">0</h2></div>
+    <div class="card green">Single Outlet<br><h2 id="single">0</h2></div>
+    <div class="card pink">Chain<br><h2 id="chain">0</h2></div>
+    <div class="card orange">States<br><h2 id="states">0</h2></div>
   </div>
 
-  <input type="text" id="search" placeholder="Search restaurant, city, owner...">
-
-  <table>
-    <thead>
-      <tr>
-        <th>Res ID</th>
-        <th>Date</th>
-        <th>Restaurant</th>
-        <th>Owner</th>
-        <th>City</th>
-        <th>State</th>
-        <th>Type</th>
-        <th>Call Date</th>
-        <th>Agent</th>
-        <th>Remarks</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <!-- RIGHT TABLE -->
+  <div class="table-box">
+    <table>
+      <thead>
+        <tr>
+          <th>Restaurant</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Type</th>
+          <th>Agent</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 
 </div>
 
@@ -114,19 +158,14 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwoUUmuGK5BiS6AvD5VXqr0K_rBrTAQ-zFSS6UrmYdOdDPAb6IVW8lizQHv-09VX8br/exec";
 
-let dataGlobal = [];
-
-fetch(API_URL)
-.then(res => res.json())
-.then(data => {
-  dataGlobal = data;
-  renderStats(data);
-  renderTable(data);
-})
-.catch(err => {
-  alert("Error fetching data. Check permissions or URL.");
-  console.error(err);
-});
+function loadData() {
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      renderStats(data);
+      renderTable(data);
+    });
+}
 
 function renderStats(data) {
   document.getElementById("total").innerText = data.length;
@@ -145,36 +184,21 @@ function renderTable(data) {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
 
-  data.forEach(row => {
+  data.slice(0, 50).forEach(row => {
     tbody.innerHTML += `
       <tr>
-        <td>${row["Res ID"]}</td>
-        <td>${row["Res Created Date"]}</td>
         <td>${row["Restaurant Name"]}</td>
-        <td>${row["Owner Name and Number"]}</td>
         <td>${row["City"]}</td>
         <td>${row["State"]}</td>
         <td>${row["Chain or not"]}</td>
-        <td>${row["Call Date"]}</td>
         <td>${row["Name"]}</td>
-        <td>${row["Remarks"]}</td>
         <td>${row["FinalStatus"]}</td>
       </tr>
     `;
   });
 }
 
-document.getElementById("search").addEventListener("input", function() {
-  const val = this.value.toLowerCase();
-
-  const filtered = dataGlobal.filter(row =>
-    Object.values(row).some(v =>
-      String(v).toLowerCase().includes(val)
-    )
-  );
-
-  renderTable(filtered);
-});
+loadData();
 
 </script>
 
