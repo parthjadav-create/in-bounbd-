@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Smart Inventory Dashboard</title>
+  <title>Restaurant Lead Dashboard</title>
 
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI';
       background: linear-gradient(135deg, #0f172a, #1e293b);
       color: white;
     }
@@ -14,7 +14,6 @@
     h1 {
       text-align: center;
       padding: 20px;
-      font-weight: 600;
     }
 
     .container {
@@ -24,121 +23,85 @@
     .cards {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
+      gap: 15px;
       margin-bottom: 20px;
     }
 
     .card {
       background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
-
-    .card h3 {
-      margin: 0;
-      font-size: 14px;
-      color: #94a3b8;
-    }
-
-    .card p {
-      font-size: 24px;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    .search-box {
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    input {
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      width: 300px;
+      padding: 15px;
+      border-radius: 12px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
-      border-radius: 10px;
-      overflow: hidden;
     }
 
     th, td {
-      padding: 10px;
+      padding: 8px;
       font-size: 12px;
-      text-align: left;
     }
 
     th {
       background: #2563eb;
     }
 
-    tr:nth-child(even) {
-      background: rgba(255,255,255,0.03);
-    }
-
-    tr:hover {
-      background: rgba(255,255,255,0.08);
+    input {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 10px;
+      width: 300px;
     }
   </style>
 </head>
 
 <body>
 
-<h1>📊 Inventory Intelligence Dashboard</h1>
+<h1>📊 Restaurant Lead Dashboard</h1>
 
 <div class="container">
 
   <div class="cards">
     <div class="card">
-      <h3>Total Records</h3>
+      <h3>Total Leads</h3>
       <p id="total"></p>
     </div>
 
     <div class="card">
-      <h3>Hyperpure Leads</h3>
-      <p id="hyperpure"></p>
+      <h3>Single Outlet</h3>
+      <p id="single"></p>
     </div>
 
     <div class="card">
-      <h3>Purchases</h3>
-      <p id="purchase"></p>
+      <h3>Chain Outlets</h3>
+      <p id="chain"></p>
     </div>
 
     <div class="card">
-      <h3>Unique Agents</h3>
-      <p id="agents"></p>
+      <h3>States Covered</h3>
+      <p id="states"></p>
     </div>
   </div>
 
-  <div class="search-box">
-    <input type="text" id="search" placeholder="Search anything...">
-  </div>
+  <input type="text" id="search" placeholder="Search restaurant, city, owner...">
 
   <table>
     <thead>
       <tr>
+        <th>Res ID</th>
         <th>Date</th>
-        <th>Interaction Type</th>
-        <th>Customer Number</th>
-        <th>Agent Name</th>
-        <th>Call Related To</th>
-        <th>Category</th>
-        <th>Comments</th>
-        <th>Hyperpure</th>
-        <th>Purchase</th>
-        <th>Restaurant ID</th>
-        <th>Restaurant Name</th>
+        <th>Restaurant</th>
+        <th>Owner</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Type</th>
+        <th>Call Date</th>
+        <th>Agent</th>
+        <th>Remarks</th>
         <th>Status</th>
-        <th>Norm Name</th>
-        <th>Date (MM/DD/YYYY)</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -147,28 +110,29 @@
 </div>
 
 <script>
+
 const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
-let globalData = [];
+let dataGlobal = [];
 
 fetch(API_URL)
-  .then(res => res.json())
-  .then(data => {
-    globalData = data;
-    renderStats(data);
-    renderTable(data);
-  });
+.then(res => res.json())
+.then(data => {
+  dataGlobal = data;
+  renderStats(data);
+  renderTable(data);
+});
 
 function renderStats(data) {
   document.getElementById("total").innerText = data.length;
 
-  document.getElementById("hyperpure").innerText =
-    data.filter(d => d.Hyperpure_Lead === "Yes").length;
+  document.getElementById("single").innerText =
+    data.filter(d => d["Chain or not"] === "Single Outlet").length;
 
-  document.getElementById("purchase").innerText =
-    data.filter(d => d.Purchase_by_Petpooja === "Yes").length;
+  document.getElementById("chain").innerText =
+    data.filter(d => d["Chain or not"].includes("Chain")).length;
 
-  const agents = [...new Set(data.map(d => d["Agent Name"]))];
-  document.getElementById("agents").innerText = agents.length;
+  const states = [...new Set(data.map(d => d.State))];
+  document.getElementById("states").innerText = states.length;
 }
 
 function renderTable(data) {
@@ -178,36 +142,34 @@ function renderTable(data) {
   data.forEach(row => {
     tbody.innerHTML += `
       <tr>
-        <td>${row["Date"]}</td>
-        <td>${row["Interaction Type"]}</td>
-        <td>${row["Customer Number"]}</td>
-        <td>${row["Agent Name"]}</td>
-        <td>${row["CallRealatedTo"]}</td>
-        <td>${row["Category"]}</td>
-        <td>${row["Comments1"]}</td>
-        <td>${row["Hyperpure_Lead"]}</td>
-        <td>${row["Purchase_by_Petpooja"]}</td>
-        <td>${row["RestaurantId"]}</td>
-        <td>${row["Restaurantname"]}</td>
-        <td>${row["Status1"]}</td>
-        <td>${row["Norm Name"]}</td>
-        <td>${row["Date (mm/dd/yyyy)"]}</td>
+        <td>${row["Res ID"]}</td>
+        <td>${row["Res Created Date"]}</td>
+        <td>${row["Restaurant Name"]}</td>
+        <td>${row["Owner Name and Number"]}</td>
+        <td>${row["City"]}</td>
+        <td>${row["State"]}</td>
+        <td>${row["Chain or not"]}</td>
+        <td>${row["Call Date"]}</td>
+        <td>${row["Name"]}</td>
+        <td>${row["Remarks"]}</td>
+        <td>${row["FinalStatus"]}</td>
       </tr>
     `;
   });
 }
 
 document.getElementById("search").addEventListener("input", function() {
-  const value = this.value.toLowerCase();
+  const val = this.value.toLowerCase();
 
-  const filtered = globalData.filter(row =>
-    Object.values(row).some(val =>
-      String(val).toLowerCase().includes(value)
+  const filtered = dataGlobal.filter(row =>
+    Object.values(row).some(v =>
+      String(v).toLowerCase().includes(val)
     )
   );
 
   renderTable(filtered);
 });
+
 </script>
 
 </body>
