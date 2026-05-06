@@ -15,12 +15,9 @@
       padding: 15px 30px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       border-radius: 20px;
       margin: 15px;
-    }
-
-    .header h1 {
-      margin: 0;
     }
 
     .btn {
@@ -30,6 +27,12 @@
       border-radius: 20px;
       border: none;
       cursor: pointer;
+    }
+
+    .sync-time {
+      font-size: 12px;
+      color: #555;
+      margin-right: 15px;
     }
 
     .main {
@@ -51,10 +54,6 @@
     .pink { background: #ec4899; }
     .orange { background: #f97316; }
 
-    .card h2 {
-      margin: 0;
-    }
-
     .table-box {
       background: white;
       border-radius: 20px;
@@ -68,9 +67,7 @@
       font-size: 13px;
     }
 
-    th, td {
-      padding: 8px;
-    }
+    th, td { padding: 8px; }
 
     th {
       background: #1e293b;
@@ -85,21 +82,25 @@
       padding: 8px;
       border-radius: 8px;
       margin-bottom: 10px;
+      margin-right: 10px;
     }
-
   </style>
 </head>
 
 <body>
 
 <div class="header">
-  <h1>📊 Live Performance Dashboard</h1>
-  <button class="btn" onclick="loadData()">Refresh</button>
+  <h2>📊 Live Performance Dashboard</h2>
+
+  <div style="display:flex; align-items:center;">
+    <div class="sync-time" id="lastSync">Last Sync: --</div>
+    <button class="btn" onclick="loadData()">Refresh</button>
+  </div>
 </div>
 
 <div class="main">
 
-  <!-- LEFT CARDS -->
+  <!-- LEFT -->
   <div>
     <div class="card blue">Total Leads<h2 id="total">0</h2></div>
     <div class="card green">Single Outlet<h2 id="single">0</h2></div>
@@ -107,12 +108,20 @@
     <div class="card orange">States<h2 id="states">0</h2></div>
   </div>
 
-  <!-- RIGHT CONTENT -->
+  <!-- RIGHT -->
   <div>
 
-    <!-- MAIN TABLE -->
     <div class="table-box">
       <h3>📋 All Data</h3>
+
+      <select id="nameFilter">
+        <option value="">Filter by Agent</option>
+      </select>
+
+      <select id="cityFilter">
+        <option value="">Filter by City</option>
+      </select>
+
       <table>
         <thead>
           <tr>
@@ -121,6 +130,7 @@
             <th>State</th>
             <th>Type</th>
             <th>Agent</th>
+            <th>Mobile</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -128,42 +138,21 @@
       </table>
     </div>
 
-    <!-- FILTER -->
     <div class="table-box">
       <h3>🎯 Agent Analysis</h3>
 
-      <select id="nameFilter">
-        <option value="">Select Agent</option>
-      </select>
-
-      <!-- STATUS TABLE -->
       <h4>Final Status Count</h4>
       <table>
-        <thead>
-          <tr>
-            <th>Status</th>
-            <th>Count</th>
-          </tr>
-        </thead>
         <tbody id="statusBody"></tbody>
       </table>
 
-      <!-- REMARKS TABLE -->
       <h4 style="margin-top:15px;">Remarks Count</h4>
       <table>
-        <thead>
-          <tr>
-            <th>Remarks</th>
-            <th>Count</th>
-          </tr>
-        </thead>
         <tbody id="remarksBody"></tbody>
       </table>
-
     </div>
 
   </div>
-
 </div>
 
 <script>
@@ -171,6 +160,11 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbwoUUmuGK5BiS6AvD5VXqr0K_rBrTAQ-zFSS6UrmYdOdDPAb6IVW8lizQHv-09VX8br/exec";
 
 let dataGlobal = [];
+
+// 🔁 AUTO REFRESH EVERY 5 MINUTES
+setInterval(() => {
+  loadData();
+}, 300000); // 300000 ms = 5 min
 
 function loadData() {
   fetch(API_URL)
@@ -180,7 +174,16 @@ function loadData() {
       renderStats(data);
       renderTable(data);
       populateNames(data);
+      populateCities(data);
+      updateSyncTime(); // 👈 update time
     });
+}
+
+// 🕒 UPDATE LAST SYNC TIME
+function updateSyncTime() {
+  const now = new Date();
+  document.getElementById("lastSync").innerText =
+    "Last Sync: " + now.toLocaleTimeString();
 }
 
 function renderStats(data) {
@@ -201,6 +204,13 @@ function renderTable(data) {
   tbody.innerHTML = "";
 
   data.slice(0, 100).forEach(row => {
+
+    let mobile = "";
+    if (row["Owner Name and Number"]) {
+      const match = row["Owner Name and Number"].match(/\d+/);
+      mobile = match ? match[0] : "";
+    }
+
     tbody.innerHTML += `
       <tr>
         <td>${row["Restaurant Name"]}</td>
@@ -208,6 +218,7 @@ function renderTable(data) {
         <td>${row["State"]}</td>
         <td>${row["Chain or not"]}</td>
         <td>${row["Name"]}</td>
+        <td>${mobile}</td>
         <td>${row["FinalStatus"]}</td>
       </tr>
     `;
@@ -218,21 +229,40 @@ function populateNames(data) {
   const names = [...new Set(data.map(d => d["Name"]))];
   const dropdown = document.getElementById("nameFilter");
 
-  dropdown.innerHTML = '<option value="">Select Agent</option>';
+  dropdown.innerHTML = '<option value="">Filter by Agent</option>';
 
   names.forEach(name => {
     dropdown.innerHTML += `<option value="${name}">${name}</option>`;
   });
 }
 
-document.getElementById("nameFilter").addEventListener("change", function() {
-  const selected = this.value;
+function populateCities(data) {
+  const cities = [...new Set(data.map(d => d["City"]))];
+  const dropdown = document.getElementById("cityFilter");
 
-  const filtered = dataGlobal.filter(d => d["Name"] === selected);
+  dropdown.innerHTML = '<option value="">Filter by City</option>';
 
+  cities.forEach(city => {
+    dropdown.innerHTML += `<option value="${city}">${city}</option>`;
+  });
+}
+
+document.getElementById("nameFilter").addEventListener("change", applyFilters);
+document.getElementById("cityFilter").addEventListener("change", applyFilters);
+
+function applyFilters() {
+  const name = document.getElementById("nameFilter").value;
+  const city = document.getElementById("cityFilter").value;
+
+  let filtered = dataGlobal;
+
+  if (name) filtered = filtered.filter(d => d["Name"] === name);
+  if (city) filtered = filtered.filter(d => d["City"] === city);
+
+  renderTable(filtered);
   renderStatusCount(filtered);
   renderRemarksCount(filtered);
-});
+}
 
 function renderStatusCount(data) {
   const counts = {};
@@ -264,6 +294,7 @@ function renderRemarksCount(data) {
   });
 }
 
+// INITIAL LOAD
 loadData();
 
 </script>
