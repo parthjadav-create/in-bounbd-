@@ -10,37 +10,17 @@
       background: #eef2f7;
     }
 
-    /* HEADER */
     .header {
       background: white;
       padding: 15px 30px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
       border-radius: 20px;
       margin: 15px;
     }
 
     .header h1 {
       margin: 0;
-      font-size: 24px;
-    }
-
-    /* FILTER BAR */
-    .filters {
-      background: white;
-      margin: 15px;
-      padding: 15px;
-      border-radius: 20px;
-      display: flex;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .filters input {
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
     }
 
     .btn {
@@ -52,7 +32,6 @@
       cursor: pointer;
     }
 
-    /* LAYOUT */
     .main {
       display: grid;
       grid-template-columns: 250px 1fr;
@@ -60,31 +39,27 @@
       padding: 15px;
     }
 
-    /* LEFT CARDS */
     .card {
       color: white;
       padding: 20px;
       border-radius: 20px;
       margin-bottom: 15px;
-      font-weight: bold;
     }
 
     .blue { background: #3b82f6; }
     .green { background: #22c55e; }
     .pink { background: #ec4899; }
     .orange { background: #f97316; }
-    .teal { background: #14b8a6; }
 
     .card h2 {
       margin: 0;
-      font-size: 28px;
     }
 
-    /* TABLE SECTION */
     .table-box {
       background: white;
       border-radius: 20px;
       padding: 15px;
+      margin-bottom: 15px;
     }
 
     table {
@@ -94,8 +69,7 @@
     }
 
     th, td {
-      padding: 10px;
-      text-align: left;
+      padding: 8px;
     }
 
     th {
@@ -107,49 +81,87 @@
       background: #f3f4f6;
     }
 
+    select {
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
   </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
   <h1>📊 Live Performance Dashboard</h1>
-  <button class="btn" onclick="loadData()">Refresh Now</button>
+  <button class="btn" onclick="loadData()">Refresh</button>
 </div>
 
-<!-- FILTERS -->
-<div class="filters">
-  From: <input type="date" id="fromDate">
-  To: <input type="date" id="toDate">
-</div>
-
-<!-- MAIN -->
 <div class="main">
 
-  <!-- LEFT SIDE CARDS -->
+  <!-- LEFT CARDS -->
   <div>
-    <div class="card blue">TOTAL<br><h2 id="total">0</h2></div>
-    <div class="card green">Single Outlet<br><h2 id="single">0</h2></div>
-    <div class="card pink">Chain<br><h2 id="chain">0</h2></div>
-    <div class="card orange">States<br><h2 id="states">0</h2></div>
+    <div class="card blue">Total Leads<h2 id="total">0</h2></div>
+    <div class="card green">Single Outlet<h2 id="single">0</h2></div>
+    <div class="card pink">Chain<h2 id="chain">0</h2></div>
+    <div class="card orange">States<h2 id="states">0</h2></div>
   </div>
 
-  <!-- RIGHT TABLE -->
-  <div class="table-box">
-    <table>
-      <thead>
-        <tr>
-          <th>Restaurant</th>
-          <th>City</th>
-          <th>State</th>
-          <th>Type</th>
-          <th>Agent</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+  <!-- RIGHT CONTENT -->
+  <div>
+
+    <!-- MAIN TABLE -->
+    <div class="table-box">
+      <h3>📋 All Data</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Restaurant</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Type</th>
+            <th>Agent</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- FILTER -->
+    <div class="table-box">
+      <h3>🎯 Agent Analysis</h3>
+
+      <select id="nameFilter">
+        <option value="">Select Agent</option>
+      </select>
+
+      <!-- STATUS TABLE -->
+      <h4>Final Status Count</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Count</th>
+          </tr>
+        </thead>
+        <tbody id="statusBody"></tbody>
+      </table>
+
+      <!-- REMARKS TABLE -->
+      <h4 style="margin-top:15px;">Remarks Count</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Remarks</th>
+            <th>Count</th>
+          </tr>
+        </thead>
+        <tbody id="remarksBody"></tbody>
+      </table>
+
+    </div>
+
   </div>
 
 </div>
@@ -158,12 +170,16 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwoUUmuGK5BiS6AvD5VXqr0K_rBrTAQ-zFSS6UrmYdOdDPAb6IVW8lizQHv-09VX8br/exec";
 
+let dataGlobal = [];
+
 function loadData() {
   fetch(API_URL)
     .then(res => res.json())
     .then(data => {
+      dataGlobal = data;
       renderStats(data);
       renderTable(data);
+      populateNames(data);
     });
 }
 
@@ -184,7 +200,7 @@ function renderTable(data) {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
 
-  data.slice(0, 50).forEach(row => {
+  data.slice(0, 100).forEach(row => {
     tbody.innerHTML += `
       <tr>
         <td>${row["Restaurant Name"]}</td>
@@ -195,6 +211,56 @@ function renderTable(data) {
         <td>${row["FinalStatus"]}</td>
       </tr>
     `;
+  });
+}
+
+function populateNames(data) {
+  const names = [...new Set(data.map(d => d["Name"]))];
+  const dropdown = document.getElementById("nameFilter");
+
+  dropdown.innerHTML = '<option value="">Select Agent</option>';
+
+  names.forEach(name => {
+    dropdown.innerHTML += `<option value="${name}">${name}</option>`;
+  });
+}
+
+document.getElementById("nameFilter").addEventListener("change", function() {
+  const selected = this.value;
+
+  const filtered = dataGlobal.filter(d => d["Name"] === selected);
+
+  renderStatusCount(filtered);
+  renderRemarksCount(filtered);
+});
+
+function renderStatusCount(data) {
+  const counts = {};
+  data.forEach(row => {
+    const key = row["FinalStatus"] || "Blank";
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const tbody = document.getElementById("statusBody");
+  tbody.innerHTML = "";
+
+  Object.entries(counts).forEach(([k, v]) => {
+    tbody.innerHTML += `<tr><td>${k}</td><td>${v}</td></tr>`;
+  });
+}
+
+function renderRemarksCount(data) {
+  const counts = {};
+  data.forEach(row => {
+    const key = row["Remarks"] || "Blank";
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const tbody = document.getElementById("remarksBody");
+  tbody.innerHTML = "";
+
+  Object.entries(counts).forEach(([k, v]) => {
+    tbody.innerHTML += `<tr><td>${k}</td><td>${v}</td></tr>`;
   });
 }
 
